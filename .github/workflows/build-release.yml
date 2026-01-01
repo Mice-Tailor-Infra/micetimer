@@ -57,7 +57,7 @@ jobs:
         run: |
           ZIP_NAME="micetimer-ksu-${{ env.VERSION }}.zip"
           cd output_module
-          zip -r ../$ZIP_NAME ./*
+          zip -ry ../$ZIP_NAME ./*
           cd ..
           echo "ZIP_PATH=$ZIP_NAME" >> $GITHUB_ENV
 
