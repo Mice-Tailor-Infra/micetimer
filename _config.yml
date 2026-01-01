@@ -1,0 +1,11 @@
+exclude:
+  - ksu-template
+  - target
+  - src
+  - Cargo.toml
+  - Cargo.lock
+  - .github
+  - Gemini.md
+  - examples
+  - .gitignore
+  - LICENSE
