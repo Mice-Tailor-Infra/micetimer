@@ -1,0 +1,7 @@
+id=micetimer
+name=MiceTimer Daemon
+version=v0.1.0
+versionCode=1
+author=cagedbird043
+description=A systemd-style timer daemon for Android with WakeLock support.
+updateJson=https://miceworld.top/micetimer/update.json

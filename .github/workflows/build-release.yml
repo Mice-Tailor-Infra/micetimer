@@ -1,0 +1,72 @@
+name: Build and Release (Nightly)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Nightly
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+
+      - name: Install Cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build for Android (aarch64)
+        run: cross build --target aarch64-linux-android --release
+
+      - name: Prepare KSU Module
+        run: |
+          mkdir -p output_module
+          cp -r ksu-template/* output_module/
+          mkdir -p output_module/bin
+          cp target/aarch64-linux-android/release/micetimer output_module/bin/
+          
+          # Update module.prop version
+          sed -i "s/version=.*/version=nightly-$(date +%Y%m%d)/" output_module/module.prop
+          sed -i "s/versionCode=.*/versionCode=$(date +%Y%m%d)/" output_module/module.prop
+          
+          cd output_module
+          zip -r ../micetimer-ksu-nightly.zip ./*
+          cd ..
+
+      - name: Generate update.json
+        run: |
+          echo '{
+            "version": "nightly-'$(date +%Y%m%d)'",
+            "versionCode": '$(date +%Y%m%d)',
+            "zipUrl": "https://github.com/Mice-Tailor-Infra/micetimer/releases/download/nightly/micetimer-ksu-nightly.zip",
+            "changelog": "https://github.com/Mice-Tailor-Infra/micetimer/commits/main"
+          }' > update.json
+
+      - name: Update Nightly Tag
+        uses: richardsoper/action-update-tag@v1
+        with:
+          tag_name: nightly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Nightly
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: nightly
+          prerelease: true
+          files: |
+            micetimer-ksu-nightly.zip
+            target/aarch64-linux-android/release/micetimer
+            update.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

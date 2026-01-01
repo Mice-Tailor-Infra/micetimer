@@ -7,7 +7,7 @@ Description = "Update FCM Hosts from local mirror periodically"
 Exec = "/system/bin/fcm-update"
 
 # Wait 5 minutes after boot before the first run (to let network settle)
-OnBootSec = "5m"
+OnBootSec = "10s"
 
 # Run every 6 hours after the last run finished
 OnUnitActiveSec = "6h"
