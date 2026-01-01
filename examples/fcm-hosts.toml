@@ -1,0 +1,17 @@
+# MiceTimer Configuration Example
+# Place this file in /data/adb/micetimer/timers.d/fcm-hosts.toml
+
+Description = "Update FCM Hosts from local mirror periodically"
+
+# The command to execute. Use absolute paths.
+Exec = "/system/bin/fcm-update"
+
+# Wait 5 minutes after boot before the first run (to let network settle)
+OnBootSec = "5m"
+
+# Run every 6 hours after the last run finished
+OnUnitActiveSec = "6h"
+
+# Hold a partial wakelock while the command is running (default: true)
+# This prevents the CPU from sleeping during the update.
+WakeLock = true
