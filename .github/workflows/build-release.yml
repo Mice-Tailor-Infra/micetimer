@@ -1,13 +1,19 @@
-name: Build and Release (Nightly)
+name: Build and Release
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'ksu-template/**'
+      - '.github/workflows/**'
+      - 'CHANGELOG.md'
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Nightly
+    name: Build & Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,48 +31,60 @@ jobs:
       - name: Install Cross
         run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Build for Android (aarch64)
+      - name: Build for Android
         run: cross build --target aarch64-linux-android --release
 
-      - name: Prepare KSU Module
+      - name: Prepare Module Metadata
         run: |
+          # Extract version from CHANGELOG
+          BASE_VER=$(grep -m 1 "^## " CHANGELOG.md | sed 's/## //')
+          V_CODE=$(date +%Y%m%d%H)
+          
+          echo "VERSION=$BASE_VER" >> $GITHUB_ENV
+          echo "V_CODE=$V_CODE" >> $GITHUB_ENV
+          
+          # Prepare output dir
           mkdir -p output_module
           cp -r ksu-template/* output_module/
           mkdir -p output_module/bin
           cp target/aarch64-linux-android/release/micetimer output_module/bin/
           
-          # Update module.prop version
-          sed -i "s/version=.*/version=nightly-$(date +%Y%m%d)/" output_module/module.prop
-          sed -i "s/versionCode=.*/versionCode=$(date +%Y%m%d)/" output_module/module.prop
-          
-          cd output_module
-          zip -r ../micetimer-ksu-nightly.zip ./*
-          cd ..
+          # Replace placeholders in module.prop
+          sed -i "s/\${VERSION}/$BASE_VER/" output_module/module.prop
+          sed -i "s/\${V_CODE}/$V_CODE/" output_module/module.prop
 
-      - name: Generate update.json
+      - name: Pack Module
         run: |
+          ZIP_NAME="micetimer-ksu-${{ env.VERSION }}.zip"
+          cd output_module
+          zip -r ../$ZIP_NAME ./*
+          cd ..
+          echo "ZIP_PATH=$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: ${{ env.ZIP_PATH }}
+          generate_release_notes: true
+
+      - name: Update OTA Metadata
+        run: |
+          # 1. Update update.json
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/${{ env.ZIP_PATH }}"
+          
           echo '{
-            "version": "nightly-'$(date +%Y%m%d)'",
-            "versionCode": '$(date +%Y%m%d)',
-            "zipUrl": "https://github.com/Mice-Tailor-Infra/micetimer/releases/download/nightly/micetimer-ksu-nightly.zip",
-            "changelog": "https://github.com/Mice-Tailor-Infra/micetimer/commits/main"
+            "version": "'${{ env.VERSION }}'",
+            "versionCode": '${{ env.V_CODE }}',
+            "zipUrl": "'$DOWNLOAD_URL'",
+            "changelog": "https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION }}"
           }' > update.json
 
-      - name: Update Nightly Tag
-        uses: richardsoper/action-update-tag@v1
-        with:
-          tag_name: nightly
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Release Nightly
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: nightly
-          prerelease: true
-          files: |
-            micetimer-ksu-nightly.zip
-            target/aarch64-linux-android/release/micetimer
-            update.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 2. Commit back to repo
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "actions@github.com"
+          
+          git add update.json
+          
+          # 3. Smart commit
+          git diff-index --quiet HEAD || (git commit -m "chore: release ${{ env.VERSION }} [skip ci]" && git push)
