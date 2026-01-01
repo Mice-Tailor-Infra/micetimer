@@ -16,8 +16,7 @@ if [ -x "$DAEMON" ]; then
     echo "[$(date)] Service starting..." >> "$LOG_FILE"
     
     # Start in background
-    # Note: micetimer handles wake locks, but we need to ensure the process itself stays alive.
-    nohup "$DAEMON" --config-dir /data/adb/micetimer/timers.d >> "$LOG_FILE" 2>&1 &
+    nohup "$DAEMON" >> "$LOG_FILE" 2>&1 &
 else
     echo "[$(date)] Error: Daemon not found at $DAEMON" >> "$LOG_FILE"
 fi

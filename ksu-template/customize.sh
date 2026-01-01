@@ -2,19 +2,17 @@
 
 DATA_DIR="/data/adb/micetimer"
 DATA_BIN="$DATA_DIR/bin"
-DATA_TIMERS="$DATA_DIR/timers.d"
+DATA_TIMERS="/data/adb/timers.d"
 
 ui_print "- Initializing MiceTimer Storage..."
 mkdir -p "$DATA_BIN"
 mkdir -p "$DATA_TIMERS"
 
 # 1. Move binary from module temp path to persistent storage
-# The zip layout has bin/micetimer (the physical file)
 if [ -f "$MODPATH/bin/micetimer" ]; then
     ui_print "- Deploying binary..."
     mv -f "$MODPATH/bin/micetimer" "$DATA_BIN/micetimer"
     chmod 755 "$DATA_BIN/micetimer"
-    # Remove the physical bin dir in module, leaving only system/bin symlink if it exists (via overlay)
     rm -rf "$MODPATH/bin"
 else
     ui_print "❌ Error: Binary not found in package!"

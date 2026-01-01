@@ -15,7 +15,7 @@ use std::time::Duration;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Directory containing timer configurations
-    #[arg(short, long, default_value = "/data/adb/micetimer/timers.d")]
+    #[arg(short, long, default_value = "/data/adb/timers.d")]
     config_dir: String,
 
     /// Run in foreground (don't daemonize) - useful for debugging
@@ -86,6 +86,9 @@ fn load_timers<P: AsRef<Path>>(dir: P) -> Result<Vec<(String, TimerUnit)>> {
 }
 
 fn execute_timer(timer: &RuntimeTimer) {
+    if let Some(desc) = &timer.unit.description {
+        info!("Timer [{}]: {}", timer.name, desc);
+    }
     info!("Executing [{}]: {}", timer.name, timer.unit.exec);
 
     let lock_name = format!("micetimer:{}", timer.name);
