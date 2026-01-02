@@ -3,5 +3,5 @@ name=MiceTimer Daemon
 version=${VERSION}
 versionCode=${V_CODE}
 author=cagedbird043
-description=A systemd-style timer daemon for Android with WakeLock support.
+description=The heartbeat of Mice-Tailor-Infra. High-reliability timer daemon for Android.
 updateJson=https://miceworld.top/micetimer/update.json
