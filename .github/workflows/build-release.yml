@@ -52,6 +52,8 @@ jobs:
           # Replace placeholders in module.prop
           sed -i "s/\${VERSION}/$BASE_VER/" output_module/module.prop
           sed -i "s/\${V_CODE}/$V_CODE/" output_module/module.prop
+          # Add timestamp to module.prop updateJson
+          sed -i "s|update.json|update.json?t=$V_CODE|" output_module/module.prop
 
       - name: Pack Module
         run: |
@@ -77,7 +79,7 @@ jobs:
             "version": "'${{ env.VERSION }}'",
             "versionCode": '${{ env.V_CODE }}',
             "zipUrl": "'$DOWNLOAD_URL'",
-            "changelog": "https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION }}"
+            "changelog": "https://miceworld.top/micetimer/CHANGELOG.md?t='${{ env.V_CODE }}'"
           }' > update.json
 
           # 2. Commit back to repo
